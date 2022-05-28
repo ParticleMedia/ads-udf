@@ -6,6 +6,20 @@
   <packaging>jar</packaging>
   <groupId>com.newsbreak.data</groupId>
   <artifactId>hive-udfs</artifactId>
+  
+  <build>
+      <plugins>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                  <source>8</source>
+                  <target>8</target>
+              </configuration>
+          </plugin>
+      </plugins>
+  </build>
+
   <name>Hive UDF</name>
   <url>http://maven.apache.org</url>
 
@@ -76,6 +90,12 @@
       <artifactId>junit</artifactId>
       <version>4.5</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>be.cylab</groupId>
+      <artifactId>java-roc</artifactId>
+      <version>0.0.4</version>
     </dependency>
 
   </dependencies>
