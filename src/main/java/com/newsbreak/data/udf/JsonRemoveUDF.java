@@ -1,5 +1,7 @@
 package com.newsbreak.data.udf;
 
+// import javolution.text.Text;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
@@ -8,7 +10,6 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.io.Text;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -39,7 +40,7 @@ public class JsonRemoveUDF extends GenericUDF {
   }
 
   @Override
-  public Object evaluate(DeferredObject[] arguments) throws HiveException, JSONException {
+  public Object evaluate(DeferredObject[] arguments) throws HiveException {
     assert (arguments.length == 2);
 
     if (arguments[0].get() == null || arguments[1].get() == null) {
@@ -49,7 +50,12 @@ public class JsonRemoveUDF extends GenericUDF {
     Text jsonText = (Text) converters[0].convert(arguments[0].get());
     Text prefixText = (Text) converters[1].convert(arguments[1].get());
 
-    JSONObject fromJsonObject = new JSONObject(jsonText.toString());
+    JSONObject fromJsonObject = null;
+    try {
+      fromJsonObject = new JSONObject(jsonText.toString());
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
     fromJsonObject.remove(prefixText.toString());
     return fromJsonObject.toString();
 

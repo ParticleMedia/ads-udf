@@ -1,5 +1,6 @@
 package com.newsbreak.data.udf;
 
+import javolution.text.Text;
 import org.json.JSONObject;
 import java.util.Iterator;
 
@@ -11,7 +12,7 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.io.Text;
+// import org.apache.hadoop.io.Text;
 import org.json.JSONException;
 
 /**
@@ -41,7 +42,7 @@ public class NBPrefixUDF extends GenericUDF {
   }
 
   @Override
-  public Object evaluate(DeferredObject[] arguments) throws HiveException, JSONException {
+  public Object evaluate(DeferredObject[] arguments) throws HiveException {
     assert (arguments.length == 2);
 
     if (arguments[0].get() == null || arguments[1].get() == null) {
@@ -52,10 +53,19 @@ public class NBPrefixUDF extends GenericUDF {
     Text prefixText = (Text) converters[1].convert(arguments[1].get());
     String prefix = prefixText.toString();
 
-    JSONObject fromJsonObject = new JSONObject(jsonText.toString());
+    JSONObject fromJsonObject = null;
+    try {
+      fromJsonObject = new JSONObject(jsonText.toString());
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
 
     JSONObject toJsonObject = new JSONObject();
-    traverse(fromJsonObject, toJsonObject, prefix);
+    try {
+      traverse(fromJsonObject, toJsonObject, prefix);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
 
     return toJsonObject.toString();
   }
@@ -63,7 +73,7 @@ public class NBPrefixUDF extends GenericUDF {
   /** Performs a DFS traversal on the JSON object/array specified
   *   by X, and adding objects specified by NAMES to arraylist RES
   */
-  private static void traverse(JSONObject fromJsonObject, JSONObject toJsonObject, String prefix) {
+  private static void traverse(JSONObject fromJsonObject, JSONObject toJsonObject, String prefix) throws JSONException {
 
     Iterator<String> keys = fromJsonObject.keys();
     while(keys.hasNext()) {

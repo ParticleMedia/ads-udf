@@ -2,6 +2,9 @@ package com.newsbreak.data.udf;
 
 import java.util.ArrayList;
 
+//import javolution.text.Text;
+import org.apache.hadoop.io.Text;
+
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
@@ -11,7 +14,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
-import org.apache.hadoop.io.Text;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -44,7 +46,7 @@ public class JsonArrayUDF extends GenericUDF {
   }
 
   @Override
-  public Object evaluate(DeferredObject[] arguments) throws HiveException, JSONException {
+  public Object evaluate(DeferredObject[] arguments) throws HiveException {
     assert (arguments.length == 2);
 
     if (arguments[0].get() == null || arguments[1].get() == null) {
@@ -55,17 +57,26 @@ public class JsonArrayUDF extends GenericUDF {
     Text resource = (Text) converters[1].convert(arguments[1].get());
 
     ArrayList<Text> result = new ArrayList<Text>();
-    JSONObject obj = new JSONObject(s.toString());
+    JSONObject obj = null;
+    try {
+      obj = new JSONObject(s.toString());
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
     String[] names = resource.toString().split("\\.");
 
-    traverse(result, obj, names, 0);
+    try {
+      traverse(result, obj, names, 0);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
     return result;
   }
 
   /** Performs a DFS traversal on the JSON object/array specified
   *   by X, and adding objects specified by NAMES to arraylist RES
   */
-  private static void traverse(ArrayList<Text> res, Object x, String[] names, int index) {
+  private static void traverse(ArrayList<Text> res, Object x, String[] names, int index) throws JSONException {
       if (index  == names.length) {
         if (x instanceof JSONArray) {
           JSONArray arr = (JSONArray) x;

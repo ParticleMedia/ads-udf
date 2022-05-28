@@ -1,5 +1,6 @@
 package com.newsbreak.data.udf;
 
+import javolution.text.Text;
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
@@ -8,8 +9,6 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.io.Text;
-import org.json.JSONException;
 
 /**
  * ReplaceUDF
@@ -38,7 +37,7 @@ public class ReplaceUDF extends GenericUDF {
   }
 
   @Override
-  public Object evaluate(DeferredObject[] arguments) throws HiveException, JSONException {
+  public Object evaluate(DeferredObject[] arguments) throws HiveException {
     assert (arguments.length == 3);
 
     if (arguments[0].get() == null || arguments[1].get() == null) {

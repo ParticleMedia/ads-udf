@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import javolution.text.Text;
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
@@ -13,18 +14,20 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.io.Text;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+// import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Text;
 
 /**
  * NBBucket UDF
  * @author will
  */
 
-@Description(name = "NBBucket", value = "NBBucket(json, path) returns an array cotaining objects in JSON, specified by PATH",
- extended = "NBBucket(json, path) returns an array cotaining objects in JSON, specified by PATH")
+@Description(name = "NBBucket",
+        value = "NBBucket(json, path) returns an array cotaining objects in JSON, specified by PATH",
+        extended = "NBBucket(json, path) returns an array cotaining objects in JSON, specified by PATH")
 public class NBBucketUDF extends GenericUDF {
   private ObjectInspectorConverters.Converter[] converters;
 
@@ -47,7 +50,7 @@ public class NBBucketUDF extends GenericUDF {
   }
 
   @Override
-  public Object evaluate(DeferredObject[] arguments) throws HiveException, JSONException {
+  public Object evaluate(DeferredObject[] arguments) throws HiveException {
     assert (arguments.length == 2);
 
     if (arguments[0].get() == null || arguments[1].get() == null) {
@@ -58,10 +61,19 @@ public class NBBucketUDF extends GenericUDF {
     Text resource = (Text) converters[1].convert(arguments[1].get());
 
     ArrayList<Text> results = new ArrayList<Text>();
-    JSONObject obj = new JSONObject(s.toString());
+    JSONObject obj = null;
+    try {
+      obj = new JSONObject(s.toString());
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
     String[] names = resource.toString().split("\\.");
 
-    traverse(results, obj, names, 0);
+    try {
+      traverse(results, obj, names, 0);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
 
     HashSet h = new HashSet(results);
     results.clear();
@@ -73,7 +85,7 @@ public class NBBucketUDF extends GenericUDF {
   /** Performs a DFS traversal on the JSON object/array specified
   *   by X, and adding objects specified by NAMES to arraylist RES
   */
-  private static void traverse(ArrayList<Text> res, Object x, String[] names, int index) {
+  private static void traverse(ArrayList<Text> res, Object x, String[] names, int index) throws JSONException {
     JSONObject jsonObject = (JSONObject) x;
     Iterator<String> keys = jsonObject.keys();
     while(keys.hasNext()) {
