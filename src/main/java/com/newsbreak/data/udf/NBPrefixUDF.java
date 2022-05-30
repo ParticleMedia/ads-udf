@@ -1,6 +1,7 @@
 package com.newsbreak.data.udf;
 
-import javolution.text.Text;
+import org.apache.hadoop.io.Text;
+
 import org.json.JSONObject;
 import java.util.Iterator;
 
@@ -12,7 +13,6 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-// import org.apache.hadoop.io.Text;
 import org.json.JSONException;
 
 /**

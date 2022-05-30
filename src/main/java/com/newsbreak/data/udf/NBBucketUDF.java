@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import javolution.text.Text;
+// import javolution.text.Text;
+import org.apache.hadoop.io.Text;
+
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
