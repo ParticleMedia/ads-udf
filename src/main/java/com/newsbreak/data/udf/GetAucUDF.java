@@ -20,19 +20,19 @@ public class GetAucUDF extends UDF {
     String[] dataPoints = inputStr.split(", ");
 
     double[] scores = new double[dataPoints.length];
-    boolean[] flags = new boolean[dataPoints.length];
+    double[] true_alerts = new double[dataPoints.length];
 
     int i = 0;
     for (String data : dataPoints) {
       String[] tokens = data.split(":");
       double score = 1.0 / Integer.parseInt(tokens[0]);
-      boolean flag = Boolean.parseBoolean(tokens[1]);
+      double true_alert = Double.parseDouble(tokens[1]);
       scores[i] = score;
-      flags[i] = flag;
+      true_alerts[i] = true_alert;
       i++;
     }
 
-    Roc roc = new Roc(scores, flags);
+    Roc roc = new Roc(scores, true_alerts);
     return roc.computeAUC();
   }
 }

@@ -15,7 +15,7 @@ public class ABFManagerTest {
     public void init() {
     }
 
-    // @Test
+    @Test
     public void abBucket() throws Exception {
         ABFManager.init(ABFManager.Env.PROD, null);
         Map<String, String> ret = ABFManager.abBucket(ABContext.create().withFactor("1111").build());

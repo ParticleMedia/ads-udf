@@ -1,5 +1,6 @@
 package com.newsbreak.data.udf;
 
+import avro.shaded.com.google.common.collect.Lists;
 import com.nb.data.ab.bean.ABContext;
 import com.newsbreak.data.utils.ABFManager;
 import org.apache.hadoop.hive.ql.exec.Description;
@@ -25,36 +26,36 @@ import java.util.Map;
  */
 
 @UDFType(deterministic = false)
-@Description(name = "abv3_versions",
+@Description(name = "nb_abv3",
         value = "_FUNC_(user_id) - Generates a range of integers from a to b incremented by c"
         + " or the elements of a map into multiple rows and columns ")
 public class NBABV3UDF extends GenericUDTF {
 
-    public NBABV3UDF() throws Exception {
-        ABFManager.init(ABFManager.Env.PROD, null);
+    private List<String> colName = Lists.newLinkedList();
+    private List<ObjectInspector> resType = Lists.newLinkedList();
+
+    public NBABV3UDF() {
+        // ABFManager.init(ABFManager.Env.PROD, null);
     }
 
     @Override
-    public StructObjectInspector initialize(StructObjectInspector argOIs) throws UDFArgumentException {
+    public StructObjectInspector initialize(ObjectInspector[] argOIs) throws UDFArgumentException {
 
-        List<? extends StructField> inputFields = argOIs.getAllStructFieldRefs();
-        ObjectInspector[] args = new ObjectInspector[inputFields.size()];
-
-        if (args.length != 1) {
-            throw new UDFArgumentLengthException("ExplodeMap takes only one argument");
+        if (argOIs.length != 1) {
+            throw new UDFArgumentLengthException("NBABV3UDF takes only one argument");
         }
 
-        if (args[0].getCategory() != ObjectInspector.Category.PRIMITIVE) {
-            throw new UDFArgumentException("ExplodeMap takes string as a parameter");
+        if (argOIs[0].getCategory() != ObjectInspector.Category.PRIMITIVE) {
+            throw new UDFArgumentException("NBABV3UDF takes string as a parameter");
         }
 
-        ArrayList<String> fieldNames = new ArrayList<String>();
-        ArrayList<ObjectInspector> fieldOIs = new ArrayList<ObjectInspector>();
-        fieldNames.add("layer_name");
-        fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
-        fieldNames.add("bucket_num");
-        fieldOIs.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
-        return ObjectInspectorFactory.getStandardStructObjectInspector(fieldNames, fieldOIs);
+        colName.add("layer_name");
+        colName.add("bucket_num");
+        resType.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
+        resType.add(PrimitiveObjectInspectorFactory.javaStringObjectInspector);
+        // 返回分别为列名 和 列类型
+        return ObjectInspectorFactory.getStandardStructObjectInspector(colName, resType);
+
     }
 
     @Override
@@ -62,6 +63,11 @@ public class NBABV3UDF extends GenericUDTF {
 
         String user_id = args[0].toString();
 
+        try {
+            ABFManager.init(ABFManager.Env.PROD, null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         ABContext ctx = ABContext.create()
                 .withFactor(user_id)  // most time, factor use userid, anything you like
                 // .addCondition("platform", "android")  // everything want to use in conditions for filter user
@@ -77,25 +83,13 @@ public class NBABV3UDF extends GenericUDTF {
             } catch (Exception e) {
                 System.out.println("***********本机调试***********");
                 System.out.println(entry.getKey() + " " + entry.getValue());
-                continue;
             }
         }
     }
 
     @Override
-    public void close() throws HiveException {
+    public void close() {
         // TODO Auto-generated method stub
     }
-
-    /*
-    public static void main(String[] args) throws HiveException {
-        NBABV3UDF nbabv3UDF = new NBABV3UDF();
-
-        Object[] arg0 = new Object[2];
-        arg0[0]="1111";
-        nbabv3UDF.process(arg0);
-    }
-
-     */
 
 }

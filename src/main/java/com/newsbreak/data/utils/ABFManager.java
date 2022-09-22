@@ -27,9 +27,9 @@ public class ABFManager {
     }
 
     public enum Env {
-        DEV("http://172.31.23.174:8220", "http://ab-admin-beta.stag.svc.k8sc1.nb.com:8081"),
-        STAG("http://ab-api.stag.svc.k8sc1.nb.com:8220", "http://ab-admin.stag.newsbreak.com"),
-        PROD("http://ab-api.ha.nb.com:8220", "http://ab-admin.n.newsbreak.com");
+        DEV("http://172.31.23.174:8220", "ab-admin.stag.svc.k8sc1.nb.com:8081"),
+        STAG("http://ab-api.stag.svc.k8sc1.nb.com:8220", "ab-admin.stag.svc.k8sc1.nb.com:8081"),
+        PROD("http://ab-api.ha.nb.com:8220", "ab-admin.default.svc.k8sc1.nb.com:8081");
 
         private final String urlABApi;
         private final String urlABAdmin;

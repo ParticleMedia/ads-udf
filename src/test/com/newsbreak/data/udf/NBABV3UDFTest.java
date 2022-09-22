@@ -21,6 +21,8 @@ public class NBABV3UDFTest {
     }
 
     @Test
-    public void process() {
+    public void process() throws Exception {
+        System.out.print("processing ...");
+        initialize();
     }
 }
