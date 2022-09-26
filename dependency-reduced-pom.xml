@@ -4,7 +4,7 @@
   <groupId>com.newsbreak.data</groupId>
   <artifactId>hive-udfs</artifactId>
   <name>Hive UDF</name>
-  <version>hive-2.3.8-SNAPSHOT</version>
+  <version>hive-2.3.9-SNAPSHOT</version>
   <url>http://maven.apache.org</url>
   <build>
     <plugins>
@@ -12,8 +12,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>8</source>
+          <target>8</target>
         </configuration>
       </plugin>
       <plugin>
@@ -53,8 +53,14 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.5</version>
+      <version>4.13.2</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hamcrest-core</artifactId>
+          <groupId>org.hamcrest</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <dependencyManagement>
@@ -62,7 +68,7 @@
       <dependency>
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
-        <version>1.14</version>
+        <version>1.15</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
