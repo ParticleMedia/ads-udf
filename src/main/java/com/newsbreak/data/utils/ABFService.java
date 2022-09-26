@@ -23,20 +23,18 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ABFService {
 
     private static final Logger logger = LoggerFactory.getLogger(ABFService.class);
-
     private static final int BUCKET_SIZE = 1000;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ABFManager.Env env;
-
     private final List<Layer>       layers;
     private final List<IABService>  services;
-
 
     private String getMainClassName() {
         StackTraceElement[] trace = Thread.currentThread().getStackTrace();
@@ -59,7 +57,7 @@ public class ABFService {
     }
 
     private List<Layer> initLayersFromABAdmin(List<String> layerNames) throws Exception {
-        List<Layer> layers0 = null;
+        List<Layer> layers0;
         URI uri = new URIBuilder()
                 .setScheme("http")
                 .setHost(env.getUrlABAdmin())
@@ -102,7 +100,7 @@ public class ABFService {
     }
 
     private List<Layer> initLayersFromABApi(List<String> layerNames) {
-        List<Layer> layers1 = null;
+        List<Layer> layers1 = new ArrayList<>();
         URI uri = null;
         try {
             URIBuilder builder = new URIBuilder(env.getUrlABApi() + "/ab/newsbreak/layers/" + String.join(",", layerNames));
@@ -129,7 +127,7 @@ public class ABFService {
                 throw new RuntimeException("status code: "+response.getStatusLine().getStatusCode());
             }
 
-            layers1 = objectMapper.readValue(response.getEntity().getContent(), new TypeReference<List<Layer>>() {});
+            layers1.addAll(objectMapper.readValue(response.getEntity().getContent(), new TypeReference<List<Layer>>() {}));
             layers1.forEach(Layer::init);
 
             logger.info("Load Layers From ABApi Success");
@@ -141,13 +139,11 @@ public class ABFService {
 
     public Map<String, String> abVersion(ABContext ctx) {
         ABResult result = new ABResult();
-        services.forEach(service -> {
-            service.ab(ctx, result);
-        });
+        services.forEach(service -> service.ab(ctx, result));
         return result.getExp();
     }
 
-    public Map<String, String> abBucket(ABContext ctx) {
+    public Map<String, String> abBucketRemote1(ABContext ctx) {
         Map<String, String> hitBuckets = new HashMap<>();
         layers.forEach(layer -> {
             StringBuilder sb = new StringBuilder(layer.getShufflePrefix());
@@ -156,4 +152,18 @@ public class ABFService {
         });
         return hitBuckets;
     }
+
+
+    public Map<String, String> abBucketRemote(ABContext ctx) {
+        Map<String, String> hitBuckets = new HashMap<>();
+        layers.forEach(layer -> hitBuckets.put(layer.getName(), getBucketIdLocal(ctx.getFactor(), layer.getShufflePrefix())));
+        return hitBuckets;
+    }
+
+    static public String getBucketIdLocal(String factor, String shufflePrefix) {
+        String shuffleKey = MessageFormat.format("{0}@{1}", shufflePrefix, factor);
+        long ni = Integer.toUnsignedLong(MurmurHash3.hash32x86(shuffleKey.getBytes()));
+        return String.format("%03d", ni % BUCKET_SIZE);
+    }
+
 }

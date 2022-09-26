@@ -18,12 +18,12 @@ public class ABFManager {
         }
     }
 
-    static public Map<String, String> abVersion(ABContext ctx) {
+    static public Map<String, String> abVersionRemote(ABContext ctx) {
         return abServices.abVersion(ctx);
     }
 
-    static public Map<String, String> abBucket(ABContext ctx) {
-        return abServices.abBucket(ctx);
+    static public Map<String, String> abBucketRemote(ABContext ctx) {
+        return abServices.abBucketRemote(ctx);
     }
 
     public enum Env {
