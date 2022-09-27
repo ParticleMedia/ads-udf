@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
-// import javolution.text.Text;
 import org.apache.hadoop.io.Text;
-
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
@@ -19,8 +17,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectIn
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-// import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Text;
 
 /**
  * NBBucket UDF

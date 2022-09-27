@@ -2,9 +2,7 @@ package com.newsbreak.data.udf;
 
 import java.util.ArrayList;
 
-//import javolution.text.Text;
 import org.apache.hadoop.io.Text;
-
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
@@ -17,6 +15,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
+
 /**
  * JSONArray UDF
  * @author will
