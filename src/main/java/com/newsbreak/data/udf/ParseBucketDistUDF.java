@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Created on 2021/5/6.
+ * Created on 2022/9/27.
  *
  * @author wei.liu
  */
@@ -60,11 +60,11 @@ public class ParseBucketDistUDF extends GenericUDTF {
         while(iterator.hasNext()){
 
             String key = iterator.next();
-            List<String> expVer = Arrays.asList(bucketDist.getString(key).split("@"));
+            String bucketId = String.format("%03d", Integer.parseInt(key));
 
+            List<String> expVer = Arrays.asList(bucketDist.getString(key).split("@"));
             String expName  = expVer.get(0);
             String verName  = expVer.get(1);
-            String bucketId = String.format("%03d", Integer.parseInt(key));
 
             try {
                 this.forward(new String[]{bucketId, expName, verName});
