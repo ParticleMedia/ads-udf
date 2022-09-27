@@ -24,8 +24,8 @@ import org.json.JSONObject;
  */
 
 @Description(name = "NBBucket",
-        value = "NBBucket(json, path) returns an array cotaining objects in JSON, specified by PATH",
-        extended = "NBBucket(json, path) returns an array cotaining objects in JSON, specified by PATH")
+        value = "NBBucket(json, path) returns an array containing objects in JSON, specified by PATH",
+        extended = "NBBucket(json, path) returns an array containing objects in JSON, specified by PATH")
 public class NBBucketUDF extends GenericUDF {
   private ObjectInspectorConverters.Converter[] converters;
 

@@ -1,6 +1,5 @@
 package com.newsbreak.data.udf;
 
-import com.newsbreak.data.utils.ABFService;
 import org.apache.hadoop.hive.ql.exec.Description;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
 import org.apache.hadoop.hive.ql.exec.UDFArgumentLengthException;
@@ -11,11 +10,11 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
+import org.json.JSONObject;
 
-import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -25,21 +24,10 @@ import java.util.stream.Collectors;
  */
 
 @UDFType(deterministic = false)
-@Description(name = "shuffle_into_bucket_local",
+@Description(name = "parse_bucket_dist",
         value = "_FUNC_(user_id) - Shuffle Into one of 1000 Buckets each layer By user_id, "
         + " you can limit layers by arg2 in the format, for example: feed,push")
-public class ShuffleIntoBucketLocalUDF extends GenericUDTF {
-
-    static public String getBucketIdLocal(String factor, String layerName, String shuffleTs) {
-        String shufflePrefix = MessageFormat.format("{0}{1}", layerName, Optional.ofNullable(shuffleTs).orElse(""));
-        return ABFService.getBucketIdLocal(factor, shufflePrefix);
-    }
-
-    public void initialize1Arg(ObjectInspector arg1) throws UDFArgumentException {
-        if (null == arg1 || arg1.getCategory() != ObjectInspector.Category.PRIMITIVE) {
-            throw new UDFArgumentException("udf need string parameter");
-        }
-    }
+public class ParseBucketDistUDF extends GenericUDTF {
 
     public StructObjectInspector outputField(List<String> colNames) {
         List<ObjectInspector> colTypes = colNames.stream()
@@ -52,31 +40,43 @@ public class ShuffleIntoBucketLocalUDF extends GenericUDTF {
     public StructObjectInspector initialize(ObjectInspector[] argOIs) throws UDFArgumentException {
         System.out.println("----> udf initialize start |");
 
-        if (argOIs.length == 3) {
-            initialize1Arg(argOIs[0]);
-            initialize1Arg(argOIs[1]);
-            initialize1Arg(argOIs[2]);
+        if (argOIs.length == 1) {
+            if (null == argOIs[0] || argOIs[0].getCategory() != ObjectInspector.Category.PRIMITIVE) {
+                throw new UDFArgumentException("udf need string parameter");
+            }
         } else {
             throw new UDFArgumentLengthException("udf takes only one arguments, actually is : " + argOIs.length);
         }
 
-        return outputField(Arrays.asList("layer_name", "bucket_id"));
+        return outputField(Arrays.asList("bucket_id", "exp_name", "ver_name"));
     }
 
     @Override
     public void process(Object[] args) {
-        String userId = args[0].toString();
-        String layerName = args[1].toString();
-        String shuffleTs = args[2].toString();
+        String bucketDistJsonStr = args[0].toString();
+        JSONObject bucketDist = new JSONObject(bucketDistJsonStr);
 
-        String bucketIdLocal = getBucketIdLocal(userId, layerName, shuffleTs);
+        Iterator<String> iterator = bucketDist.keys();
+        while(iterator.hasNext()){
 
-        try {
-            this.forward(new String[]{layerName, bucketIdLocal});
-        } catch (Exception e) {
-            System.out.println("***********本机调试***********");
-            System.out.println(layerName + " " + bucketIdLocal);
+            String key = iterator.next();
+            List<String> expVer = Arrays.asList(bucketDist.getString(key).split("@"));
+
+            String expName  = expVer.get(0);
+            String verName  = expVer.get(1);
+            String bucketId = String.format("%03d", Integer.parseInt(key));
+
+            try {
+                this.forward(new String[]{bucketId, expName, verName});
+            } catch (Exception e) {
+                System.out.println("***********本机调试***********");
+                System.out.println(bucketId + " " + expName + " " + verName );
+            }
+
         }
+
+
+
     }
 
     @Override
