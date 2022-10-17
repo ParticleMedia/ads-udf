@@ -2,7 +2,7 @@ package com.nb.ads.udf;
 
 import static org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorUtils.PrimitiveGrouping.STRING_GROUP;
 
-import com.nb.ads.utils.UserAdRTCountersProcessor;
+import com.nb.ads.api.feature.CommonFeatureUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,7 +81,7 @@ public class GetUserAdRTCountersUDF extends GenericUDF {
       adInfos.put(adInfo.get(0), adInfo);
     }
 
-    return UserAdRTCountersProcessor.computeCounters(userFeature, adFeature, adInfos, adId);
+    return CommonFeatureUtils.computeCounters(userFeature, adFeature, adInfos, adId);
   }
 
   @Override

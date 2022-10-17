@@ -1,4 +1,4 @@
-package com.nb.ads.utils;
+package com.nb.ads.api.feature;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -10,11 +10,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-public class UserAdRTCountersProcessor {
+public class CommonFeatureUtils {
+  private static final Logger logger = Logger.getLogger(CommonFeatureUtils.class.getSimpleName());
   private static final Gson gson = new Gson();
-  private static final String[] LEVEL_NAMES = {"ad", "adset", "campaign", "account"};
-  private static Map<String, String> USER_FEATURE_EVENT_MAP;
+  public static final String[] LEVEL_NAMES = {"ad", "adset", "campaign", "account"};
+  public static Map<String, String> USER_FEATURE_EVENT_MAP;
   private static final Map<String, String[]> FEATURE_RATIO_NAME_MAP;
 
   static {
@@ -31,13 +34,15 @@ public class UserAdRTCountersProcessor {
   public static Map<String, Double> computeCounters(
       String userFeature, String adFeature, Map<Long, List<Long>> adInfos, Long adId) {
     Map<String, Double> result = new HashMap<>();
-    result.putAll(UserAdRTCountersProcessor.getAdFeatureMap(adFeature));
-    Map<String, Long[][]> userEventList = deserializedUserFeature(userFeature);
+    result.putAll(deserializedAdFeature(adFeature));
+    Map<String, List<List<Long>>> userEventList = deserializedUserFeature(userFeature);
+    // convert the Long[][] to List<List<Long>>
     Map<String, List<List<Long>>> augmentedUserEventList = augmentEventList(userEventList, adInfos);
     List<Long> adInfo = adInfos.get(adId);
-    result.putAll(aggregateUserFeature(augmentedUserEventList, adInfo));
+    result.putAll(aggregateUserFeature(augmentedUserEventList));
     result.putAll(computeRatio(result, "ad"));
     result.putAll(computeRatio(result, "user"));
+    result.putAll(aggregateCrossFeature(augmentedUserEventList, adInfo));
     for (String levelName : LEVEL_NAMES) {
       result.putAll(computeRatio(result, String.format("user_%s", levelName)));
     }
@@ -45,35 +50,15 @@ public class UserAdRTCountersProcessor {
     return result;
   }
 
-  public static Map<String, Long[][]> deserializedUserFeature(String userFeature) {
-    Map<String, Long[][]> userEventList = new HashMap<>();
-    JsonParser parser = new JsonParser();
-    JsonObject obj = parser.parse(userFeature).getAsJsonObject();
-    for (Map.Entry<String, String> userEventName : USER_FEATURE_EVENT_MAP.entrySet()) {
-      String key = String.format("USER_24HR_AD_EVENT_%s", userEventName.getKey());
-      JsonElement ele = obj.get(key);
-      if (ele == null) {
-        continue;
-      }
-      try {
-        userEventList.put(
-            userEventName.getValue(), gson.fromJson(ele.getAsString(), Long[][].class));
-      } catch (JsonParseException e) {
-        // continue for the next event, no logging for now
-      }
-    }
-    return userEventList;
-  }
-
   public static Map<String, List<List<Long>>> augmentEventList(
-      Map<String, Long[][]> eventLists, Map<Long, List<Long>> adInfos) {
+      Map<String, List<List<Long>>> eventLists, Map<Long, List<Long>> adInfos) {
     Map<String, List<List<Long>>> augmentedEventList = new HashMap<>();
-    for (Map.Entry<String, Long[][]> event : eventLists.entrySet()) {
+    for (Map.Entry<String, List<List<Long>>> event : eventLists.entrySet()) {
       String eventName = event.getKey();
-      Long[][] events = event.getValue();
+      List<List<Long>> events = event.getValue();
       List<List<Long>> augmentedEvents = new ArrayList<>();
-      for (Long[] adTsPair : events) {
-        Long adId = adTsPair[0];
+      for (List<Long> adTsPair : events) {
+        Long adId = adTsPair.get(0);
         List<Long> adInfo = adInfos.get(adId);
         if (adInfo == null) {
           // add it to compute user level features.
@@ -87,8 +72,7 @@ public class UserAdRTCountersProcessor {
     return augmentedEventList;
   }
 
-  public static Map<String, Double> aggregateUserFeature(
-      Map<String, List<List<Long>>> eventLists, List<Long> adInfo) {
+  public static Map<String, Double> aggregateUserFeature(Map<String, List<List<Long>>> eventLists) {
     Map<String, Double> userFeatureMap = new HashMap<>();
 
     for (Map.Entry<String, List<List<Long>>> event : eventLists.entrySet()) {
@@ -97,6 +81,19 @@ public class UserAdRTCountersProcessor {
       for (List<Long> eventInfo : events) {
         String featureName = String.format("user_%s_24hr", eventName);
         userFeatureMap.put(featureName, userFeatureMap.getOrDefault(featureName, 0.) + 1.);
+      }
+    }
+    return userFeatureMap;
+  }
+
+  public static Map<String, Double> aggregateCrossFeature(
+      Map<String, List<List<Long>>> eventLists, List<Long> adInfo) {
+    Map<String, Double> crossFeatureMap = new HashMap<>();
+
+    for (Map.Entry<String, List<List<Long>>> event : eventLists.entrySet()) {
+      String eventName = event.getKey();
+      List<List<Long>> events = event.getValue();
+      for (List<Long> eventInfo : events) {
         if (eventInfo.size() == 1) {
           // eventInfo.ad.account != adInfo.account
           continue;
@@ -111,12 +108,17 @@ public class UserAdRTCountersProcessor {
             continue;
           }
           String levelName = LEVEL_NAMES[i];
-          featureName = String.format("user_%s_%s_24hr", levelName, eventName);
-          userFeatureMap.put(featureName, userFeatureMap.getOrDefault(featureName, 0.) + 1.);
+          String featureName = String.format("user_%s_%s_24hr", levelName, eventName);
+          crossFeatureMap.put(featureName, crossFeatureMap.getOrDefault(featureName, 0.) + 1.);
         }
       }
     }
-    return userFeatureMap;
+    if (crossFeatureMap.size() > 0) {
+      for (String levelName : LEVEL_NAMES) {
+        crossFeatureMap.putAll(computeRatio(crossFeatureMap, String.format("user_%s", levelName)));
+      }
+    }
+    return crossFeatureMap;
   }
 
   public static Map<String, Double> computeRatio(Map<String, Double> features, String prefix) {
@@ -134,7 +136,7 @@ public class UserAdRTCountersProcessor {
     return cxrs;
   }
 
-  public static Map<String, Double> getAdFeatureMap(String adFeature) {
+  private static Map<String, Double> deserializedAdFeature(String adFeature) {
     Map<String, Double> adFeatureMap = new HashMap<>();
     JsonParser parser = new JsonParser();
     JsonObject obj = parser.parse(adFeature).getAsJsonObject();
@@ -154,5 +156,27 @@ public class UserAdRTCountersProcessor {
       }
     }
     return adFeatureMap;
+  }
+
+  private static Map<String, List<List<Long>>> deserializedUserFeature(String userFeature) {
+    Map<String, List<List<Long>>> userEventList = new HashMap<>();
+    JsonParser parser = new JsonParser();
+    JsonObject obj = parser.parse(userFeature).getAsJsonObject();
+    for (Map.Entry<String, String> userEventName : USER_FEATURE_EVENT_MAP.entrySet()) {
+      String key = String.format("USER_24HR_AD_EVENT_%s", userEventName.getKey());
+      JsonElement ele = obj.get(key);
+      if (ele == null) {
+        continue;
+      }
+      try {
+        Long[][] arrays = gson.fromJson(ele.getAsString(), Long[][].class);
+        userEventList.put(
+            userEventName.getValue(),
+            Arrays.stream(arrays).map(Arrays::asList).collect(Collectors.toList()));
+      } catch (JsonParseException e) {
+        // continue for the next event, no logging for now
+      }
+    }
+    return userEventList;
   }
 }
