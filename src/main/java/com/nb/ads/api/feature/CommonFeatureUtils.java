@@ -103,7 +103,8 @@ public class CommonFeatureUtils {
             // some part is missing
             break;
           }
-          if (eventInfo.get(i) != adInfo.get(i)) {
+          Long id = eventInfo.get(i);
+          if (id == null || !id.equals(adInfo.get(i))) {
             // try to match the upper level
             continue;
           }
@@ -168,8 +169,17 @@ public class CommonFeatureUtils {
       if (ele == null) {
         continue;
       }
+      String list = ele.getAsString();
+      if (list.startsWith("[\"")) {
+        // pattern
+        int length = list.length();
+        if (length < 4) {
+          continue;
+        }
+        list = list.substring(2, length - 2);
+      }
       try {
-        Long[][] arrays = gson.fromJson(ele.getAsString(), Long[][].class);
+        Long[][] arrays = gson.fromJson(list, Long[][].class);
         userEventList.put(
             userEventName.getValue(),
             Arrays.stream(arrays).map(Arrays::asList).collect(Collectors.toList()));

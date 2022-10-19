@@ -4,7 +4,7 @@
   <groupId>com.nb.ads</groupId>
   <artifactId>ads-hive-udfs</artifactId>
   <name>Ads Hive UDF</name>
-  <version>1.0.0</version>
+  <version>1.0.2</version>
   <url>http://maven.apache.org</url>
   <build>
     <plugins>
