@@ -52,9 +52,10 @@ public class GetUserAdRTCountersUDFTest {
 
     Map<String, String> userFeatureMap = new HashMap<>();
     userFeatureMap.put(
-        "USER_24HR_AD_EVENT_IMPRESSION", "[[1111,1],[2111, 10],[1112, 20],[1113,30],[1114,40]]");
-    userFeatureMap.put("USER_24HR_AD_EVENT_CLICK", "[[1111,3]]");
-    userFeatureMap.put("USER_24HR_AD_EVENT_CONVERSION", "[[1111,5]]");
+        "USER_24HR_AD_EVENT_IMPRESSION",
+        "[[1577702671705346050,1],[2111, 10],[1112, 20],[1113,30],[1114,40]]");
+    userFeatureMap.put("USER_24HR_AD_EVENT_CLICK", "[[1577702671705346050,3]]");
+    userFeatureMap.put("USER_24HR_AD_EVENT_CONVERSION", "[[1577702671705346050,5]]");
     Map<String, String> adFeatureMap = new HashMap<>();
     adFeatureMap.put("ad_conversion_24hr", "[2.0]");
     adFeatureMap.put("ad_click_24hr", "[1026.0]");
@@ -62,10 +63,11 @@ public class GetUserAdRTCountersUDFTest {
 
     Object userFeature = new Text(gson.toJson(userFeatureMap));
     Object adFeature = new Text(gson.toJson(adFeatureMap));
-    Object adId = new Text("1111");
+    Object adId = new Text("1577702671705346050");
     Object adInfos =
         Arrays.asList(
-            Arrays.asList(new Text("1111"), new Text("111"), new Text("11"), new Text("1")),
+            Arrays.asList(
+                new Text("1577702671705346050"), new Text("111"), new Text("11"), new Text("1")),
             Arrays.asList(new Text("2111"), new Text("111"), new Text("11"), new Text("1")));
 
     GenericUDF.DeferredObject[] argas = {
@@ -383,5 +385,49 @@ public class GetUserAdRTCountersUDFTest {
     Assert.assertNotNull(oi.get("user_account_ctr_24hr"));
     Assert.assertEquals(1, oi.get("user_account_ctr_24hr"), DELTA);
     Assert.assertEquals(FULL_FEATURE_COUNT - 5 - 5 * 2 - 2 - 1, oi.size());
+  }
+
+  @Test
+  public void newVersionCompleteFeatureUDF() throws HiveException {
+    GetUserAdRTCountersUDF udf = new GetUserAdRTCountersUDF();
+    udf.initialize(inputOIs);
+
+    Map<String, String> userFeatureMap = new HashMap<>();
+    userFeatureMap.put(
+        "USER_24HR_AD_EVENT_IMPRESSION",
+        "[\"[[1577702671705346050,1],[2111, 10],[1112, 20],[1113,30],[1114,40]]\"]");
+    userFeatureMap.put("USER_24HR_AD_EVENT_CLICK", "[\"[[1577702671705346050,3]]\"]");
+    userFeatureMap.put("USER_24HR_AD_EVENT_CONVERSION", "[\"[[1577702671705346050,5]]\"]");
+    Map<String, String> adFeatureMap = new HashMap<>();
+    adFeatureMap.put("ad_conversion_24hr", "[2.0]");
+    adFeatureMap.put("ad_click_24hr", "[1026.0]");
+    adFeatureMap.put("ad_show_24hr", "[49158.0]");
+
+    Object userFeature = new Text(gson.toJson(userFeatureMap));
+    Object adFeature = new Text(gson.toJson(adFeatureMap));
+    Object adId = new Text("1577702671705346050");
+    Object adInfos =
+        Arrays.asList(
+            Arrays.asList(
+                new Text("1577702671705346050"), new Text("111"), new Text("11"), new Text("1")),
+            Arrays.asList(new Text("2111"), new Text("111"), new Text("11"), new Text("1")));
+
+    GenericUDF.DeferredObject[] argas = {
+      new GenericUDF.DeferredJavaObject(userFeature),
+      new GenericUDF.DeferredJavaObject(adFeature),
+      new GenericUDF.DeferredJavaObject(adId),
+      new GenericUDF.DeferredJavaObject(adInfos),
+    };
+
+    oi = (Map<String, Double>) udf.evaluate(argas);
+    Assert.assertNotNull(oi.get("user_ctr_24hr"));
+    Assert.assertEquals(0.2, oi.get("user_ctr_24hr"), DELTA);
+    Assert.assertNotNull(oi.get("ad_ctr_24hr"));
+    Assert.assertEquals(1026.0 / 49158., oi.get("ad_ctr_24hr"), DELTA);
+    Assert.assertNotNull(oi.get("user_ad_ctr_24hr"));
+    Assert.assertEquals(1.0, oi.get("user_ad_ctr_24hr"), DELTA);
+    Assert.assertNotNull(oi.get("user_adset_ctr_24hr"));
+    Assert.assertEquals(0.5, oi.get("user_adset_ctr_24hr"), DELTA);
+    Assert.assertEquals(FULL_FEATURE_COUNT, oi.size());
   }
 }
